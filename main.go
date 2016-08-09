@@ -2,8 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+
+	"golang.org/x/net/websocket"
 )
 
 type Snake struct {
@@ -29,5 +32,22 @@ func main() {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		json.NewEncoder(w).Encode(s)
 	})
+	http.Handle("/socket", websocket.Handler(socketHandler))
 	http.ListenAndServe(":8080", nil)
+}
+
+func socketHandler(ws *websocket.Conn) {
+	msg := make([]byte, 512)
+	n, err := ws.Read(msg)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Receive: %s\n", msg[:n])
+
+	m, err := ws.Write(msg[:n])
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Send: %s\n", msg[:m])
 }
