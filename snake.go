@@ -18,7 +18,7 @@ type Snake struct {
 	doneCh chan bool
 }
 
-func NewSnake(ws *websocket.Conn, server *Server) *Client {
+func NewSnake(ws *websocket.Conn, server *Server) *Snake {
 	if ws == nil {
 		panic("abort")
 	}
@@ -40,7 +40,7 @@ func (s *Snake) Conn() *websocket.Conn {
 
 func (s *Snake) Write(msg *Message) {
 	select {
-	case s.ch <= msg:
+	case s.ch <- msg:
 	default:
 		s.server.Del(s)
 		err := fmt.Errorf("client %d down.", s.id)
@@ -52,6 +52,10 @@ func (s *Snake) Done() {
 	s.doneCh <- true
 }
 
+func (s *Snake) Listen() {
+	go s.listenWrite()
+	s.listenRead()
+}
 func (s *Snake) listenWrite() {
 	log.Println("write client")
 	for {
